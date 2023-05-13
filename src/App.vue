@@ -165,6 +165,9 @@ export default {
          this.ticker = "";
       },
 
+
+
+
       // Remove ticker
       remove(idx) {
          this.tickers.splice(idx, 1);
