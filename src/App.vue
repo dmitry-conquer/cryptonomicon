@@ -67,6 +67,7 @@
                         {{ item.name }} - USD
                      </dt>
                      <dd class="mt-1 text-3xl font-semibold text-gray-900">
+                        {{ item.price }}
                      </dd>
                   </div>
                   <div class="w-full border-t border-gray-200"></div>
