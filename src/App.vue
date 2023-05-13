@@ -169,9 +169,6 @@ export default {
          this.ticker = "";
       },
 
-<<<<<<< HEAD
-// sadas
-=======
       // graph normalize
       graphNormilize (){
         const minPrice = Math.min(...this.graph);
@@ -179,7 +176,6 @@ export default {
         return this.graph.map(price => ((price - minPrice) / (maxPrice - minPrice)) * 100);
       },
     
->>>>>>> conquer-code
 
       // Remove ticker
       remove(idx) {
