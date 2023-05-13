@@ -7,7 +7,10 @@
                   <label for="wallet"
                          class="block text-sm font-medium text-gray-700">Тикер</label>
                   <div class="mt-1 relative rounded-md shadow-md">
-                     <input type="text"
+
+                     <!-- #input ticker -->
+                     <input v-model='ticker'
+                            type="text"
                             name="wallet"
                             id="wallet"
                             class="block w-full pr-10 border-gray-300 text-gray-900 focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm rounded-md"
@@ -30,7 +33,10 @@
                   <div class="text-sm text-red-600">Такой тикер уже добавлен</div>
                </div>
             </div>
-            <button type="button"
+
+            <!-- #add buttom -->
+            <button @click='add()'
+                    type="button"
                     class="my-4 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
                <!-- Heroicon name: solid/mail -->
                <svg class="-ml-0.5 mr-2 h-6 w-6"
@@ -172,15 +178,29 @@
    </div>
 </template>
 
-<!-- - - - - - - - [script] - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+<!-- - - - - - - - [###script] - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
 <script>
 export default {
    name: 'App',
+   data() {
+      return {
+         ticker: '',
+         tickersList: [],
+      }
+   },
+
+   methods: {
+      // Додавання тікеру
+      add() {
+         this.tickersList.push(this.ticker);
+         alert(this.tickersList);
+      }
+   }
 }
 </script>
 
-<!-- - - - - - - - [style] - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+<!-- - - - - - - - [###style] - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
 <style src="./app.css">
 
