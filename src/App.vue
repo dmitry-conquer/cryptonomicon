@@ -148,6 +148,20 @@ export default {
             price: "-"
          };
          this.tickers.push(newTicker);
+
+         setInterval(() => {
+            fetch(`https://min-api.cryptocompare.com/data/price?fsym=${newTicker.name}&tsyms=USD&api_key=38670903ca116672f3a5f494df8cdefefe2503b4ef3399e63c9e13ba1069bc87`)
+               .then(response => {
+                  if (response.ok) {
+                     return response.json();
+                  }
+               })
+               .then(data => {
+                  this.tickers.find(item => item.name == newTicker.name).price = data.USD > 1 ? data.USD.toFixed(2) : data.USD.toPrecision(2);
+               })
+               .catch(error => console.error(error))
+         }, 3000)
+
          this.ticker = "";
       },
 
@@ -156,7 +170,8 @@ export default {
          this.tickers.splice(idx, 1);
       },
 
-      // Select ticker
+    
+
    }
 }
 </script>
