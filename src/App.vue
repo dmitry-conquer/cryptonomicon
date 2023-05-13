@@ -165,7 +165,7 @@ export default {
          this.ticker = "";
       },
 
-
+// sadas
 
       // Remove ticker
       remove(idx) {
