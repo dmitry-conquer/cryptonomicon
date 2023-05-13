@@ -96,10 +96,10 @@
                {{ selTicker.name }} - USD
             </h3>
             <div class="flex items-end border-gray-600 border-b border-l h-64">
-               <div class="bg-purple-800 border w-10 h-24"></div>
-               <div class="bg-purple-800 border w-10 h-32"></div>
-               <div class="bg-purple-800 border w-10 h-48"></div>
-               <div class="bg-purple-800 border w-10 h-16"></div>
+               <div v-for="(bar, idx) in graphNormilize()"
+                    :key="idx"
+                    :style="{height: `${bar}%`}"
+                    class="bg-purple-800 border w-10"></div>
             </div>
             <button @click="selTicker = null"
                     type="button"
@@ -137,6 +137,7 @@ export default {
          selTicker: null,
          ticker: "",
          tickers: [],
+         graph: [],
       }
    },
 
@@ -148,7 +149,7 @@ export default {
             price: "-"
          };
          this.tickers.push(newTicker);
-
+         // Get ticker info
          setInterval(() => {
             fetch(`https://min-api.cryptocompare.com/data/price?fsym=${newTicker.name}&tsyms=USD&api_key=38670903ca116672f3a5f494df8cdefefe2503b4ef3399e63c9e13ba1069bc87`)
                .then(response => {
@@ -157,24 +158,34 @@ export default {
                   }
                })
                .then(data => {
-                  this.tickers.find(item => item.name == newTicker.name).price = data.USD > 1 ? data.USD.toFixed(2) : data.USD.toPrecision(2);
+                  const currentPrice = this.tickers.find(item => item.name == newTicker.name).price = data.USD > 1 ? data.USD.toFixed(2) : data.USD.toPrecision(2);
+
+                  if (this.selTicker?.name == newTicker.name) {
+                     this.graph.push(currentPrice);
+                  }
                })
                .catch(error => console.error(error))
          }, 3000)
-
          this.ticker = "";
       },
 
+<<<<<<< HEAD
 // sadas
+=======
+      // graph normalize
+      graphNormilize (){
+        const minPrice = Math.min(...this.graph);
+        const maxPrice = Math.max(...this.graph);
+        return this.graph.map(price => ((price - minPrice) / (maxPrice - minPrice)) * 100);
+      },
+    
+>>>>>>> conquer-code
 
       // Remove ticker
       remove(idx) {
-        console.log('dsads');
+         console.log('dsads');
          this.tickers.splice(idx, 1);
       },
-
-    
-
    }
 }
 </script>
