@@ -9,8 +9,8 @@
                   <div class="mt-1 relative rounded-md shadow-md">
 
                      <!-- #input ticker -->
-                     <input v-model='ticker'
-                            @keydown.enter='add()'
+                     <input v-model="ticker"
+                            @keydown.enter="add()"
                             type="text"
                             name="wallet"
                             id="wallet"
@@ -36,7 +36,7 @@
             </div>
 
             <!-- #add buttom -->
-            <button @click='add()'
+            <button @click="add()"
                     type="button"
                     class="my-4 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
                <!-- Heroicon name: solid/mail -->
@@ -52,13 +52,15 @@
             </button>
          </section>
 
-         <template v-if='tickers.length > 0'>
+         <template v-if="tickers.length > 0">
             <hr class="w-full border-t border-gray-600 my-4" />
             <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
 
                <!-- #tickers list -->
-               <div v-for='(item, idx) in tickers'
+               <div v-for="(item, idx) in tickers"
                     :key="item.name"
+                    @click="selectTicker(item)"
+                    :class="{'border-4': selTicker == item}"
                     class="bg-white overflow-hidden shadow rounded-lg border-purple-800 border-solid cursor-pointer">
                   <div class="px-4 py-5 sm:p-6 text-center">
                      <dt class="text-sm font-medium text-gray-500 truncate">
@@ -71,7 +73,7 @@
                   <div class="w-full border-t border-gray-200"></div>
 
                   <!-- #remove ticker -->
-                  <button @click='remove(idx)'
+                  <button @click="remove(idx)"
                           class="flex items-center justify-center font-medium w-full bg-gray-100 px-4 py-4 sm:px-6 text-md text-gray-500 hover:text-gray-600 hover:bg-gray-200 hover:opacity-20 transition-all focus:outline-none">
                      <svg class="h-5 w-5"
                           xmlns="http://www.w3.org/2000/svg"
@@ -127,10 +129,11 @@
 
 <script>
 export default {
-   name: 'App',
+   name: "App",
    data() {
       return {
-         ticker: '',
+         selTicker: null,
+         ticker: "",
          tickers: [],
       }
    },
@@ -140,14 +143,19 @@ export default {
       add() {
          const newTicker = {
             name: this.ticker,
-            price: '-'
+            price: "-"
          };
          this.tickers.push(newTicker);
-         this.ticker = '';
+         this.ticker = "";
       },
 
+      // Remove ticker
       remove(idx) {
          this.tickers.splice(idx, 1);
+      },
+      // Select ticker
+      selectTicker(currentTicker) {
+         this.selTicker = currentTicker;
       }
    }
 }
