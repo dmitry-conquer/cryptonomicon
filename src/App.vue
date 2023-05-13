@@ -166,7 +166,7 @@ export default {
       },
 
 
-// sAS
+// sASsadsadsa
 
       // Remove ticker
       remove(idx) {
