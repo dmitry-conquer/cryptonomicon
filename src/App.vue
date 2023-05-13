@@ -170,6 +170,7 @@ export default {
 
       // Remove ticker
       remove(idx) {
+        console.log('dsads');
          this.tickers.splice(idx, 1);
       },
 
