@@ -173,6 +173,7 @@ export default {
       graphNormilize (){
         const minPrice = Math.min(...this.graph);
         const maxPrice = Math.max(...this.graph);
+        // norm
         return this.graph.map(price => ((price - minPrice) / (maxPrice - minPrice)) * 100);
       },
     
