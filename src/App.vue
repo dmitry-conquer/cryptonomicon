@@ -166,7 +166,7 @@ export default {
       },
 
 
-
+// sadasd
       // Remove ticker
       remove(idx) {
         console.log('dsads');
