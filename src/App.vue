@@ -59,7 +59,7 @@
                <!-- #tickers list -->
                <div v-for="(item, idx) in tickers"
                     :key="item.name"
-                    @click="selTicker = item"
+                    @click="handleSelect(item)"
                     :class="{'border-4': selTicker == item}"
                     class="bg-white overflow-hidden shadow rounded-lg border-purple-800 border-solid cursor-pointer">
                   <div class="px-4 py-5 sm:p-6 text-center">
@@ -158,23 +158,28 @@ export default {
                   }
                })
                .then(data => {
-                  const currentPrice = this.tickers.find(item => item.name == newTicker.name).price = data.USD > 1 ? data.USD.toFixed(2) : data.USD.toPrecision(2);
+                  const currentPrice = this.tickers.find(item => item.name == newTicker.name).price = data.USD > 1 ? data.USD.toFixed(3) : data.USD.toPrecision(3);
 
                   if (this.selTicker?.name == newTicker.name) {
                      this.graph.push(currentPrice);
                   }
                })
                .catch(error => console.error(error))
-         }, 3000)
+         }, 5000)
          this.ticker = "";
+      },
+
+      handleSelect(currentTicker) {
+        this.graph = [];
+        this.selTicker = currentTicker;
       },
 
       // graph normalize
       graphNormilize (){
         const minPrice = Math.min(...this.graph);
         const maxPrice = Math.max(...this.graph);
-        // norm
-        return this.graph.map(price => ((price - minPrice) / (maxPrice - minPrice)) * 100);
+        return this.graph.map(
+          price => (((price - minPrice) / (maxPrice - minPrice)) * 95) + 5);
       },
     
 
