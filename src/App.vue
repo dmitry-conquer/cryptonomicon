@@ -11,27 +11,27 @@
                      <!-- #input ticker -->
                      <input v-model="ticker"
                             @keydown.enter="add()"
+                            @input="handleCoinsList"
                             type="text"
                             name="wallet"
                             id="wallet"
                             class="block w-full pr-10 border-gray-300 text-gray-900 focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm rounded-md"
                             placeholder="Например DOGE" />
                   </div>
-                  <div class="flex bg-white shadow-md p-1 rounded-md shadow-md flex-wrap">
-                     <span class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer">
-                        BTC
-                     </span>
-                     <span class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer">
-                        DOGE
-                     </span>
-                     <span class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer">
-                        BCH
-                     </span>
-                     <span class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer">
-                        CHD
+                  <div
+                   v-if="coinsList.length > 0"
+                   class="flex bg-white shadow-md p-1 rounded-md shadow-md flex-wrap">
+                     <span
+                      v-for="(coin, idx) in coinsList"
+                      :key="idx"
+                      @click="ticker = coin, add()"
+                      class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer">
+                        {{ coin }}
                      </span>
                   </div>
-                  <div class="text-sm text-red-600">Такой тикер уже добавлен</div>
+                  <div
+                   v-if="isContains"
+                   class="text-sm text-red-600">Такой тикер уже добавлен</div>
                </div>
             </div>
 
@@ -134,6 +134,9 @@ export default {
    name: "App",
    data() {
       return {
+         isContains: false,
+         coinsList: [],
+         coinsData: [],
          selTicker: null,
          ticker: "",
          tickers: [],
@@ -142,13 +145,18 @@ export default {
    },
 
    methods: {
-      // Add ticker
       add() {
          const newTicker = {
             name: this.ticker,
             price: "-"
          };
+
+         if (this.tickers.find(t => t.name.toUpperCase() == this.ticker.toUpperCase())) {
+            this.isContains = true
+            return
+         }
          this.tickers.push(newTicker);
+
          // Get ticker info
          setInterval(() => {
             fetch(`https://min-api.cryptocompare.com/data/price?fsym=${newTicker.name}&tsyms=USD&api_key=38670903ca116672f3a5f494df8cdefefe2503b4ef3399e63c9e13ba1069bc87`)
@@ -167,27 +175,37 @@ export default {
                .catch(error => console.error(error))
          }, 5000)
          this.ticker = "";
+         this.coinsList = [];
       },
 
+      handleCoinsList () {
+          this.isContains = false;
+          this.coinsList = this.coinsData.filter(coin => coin.toUpperCase().includes(this.ticker.toUpperCase())).slice(0, 4);
+          if (this.ticker == '') this.coinsList = [] ;
+      },
       handleSelect(currentTicker) {
-        this.graph = [];
-        this.selTicker = currentTicker;
+         this.graph = [];
+         this.selTicker = currentTicker;
       },
 
-      // graph normalize
-      graphNormilize (){
-        const minPrice = Math.min(...this.graph);
-        const maxPrice = Math.max(...this.graph);
-        return this.graph.map(
-          price => (((price - minPrice) / (maxPrice - minPrice)) * 95) + 5);
+      graphNormilize() {
+         const minPrice = Math.min(...this.graph);
+         const maxPrice = Math.max(...this.graph);
+         return this.graph.map(
+            price => (((price - minPrice) / (maxPrice - minPrice)) * 95) + 5);
       },
-    
 
-      // Remove ticker
       remove(idx) {
-         console.log('dsads');
          this.tickers.splice(idx, 1);
       },
+   },
+
+   created() {
+      fetch(`https://min-api.cryptocompare.com/data/all/coinlist?summary=true`)
+         .then(response => response.json())
+         .then(data => {
+            this.coinsData = Object.values(data.Data).map(item => item.Symbol);
+         })
    }
 }
 </script>
