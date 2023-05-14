@@ -55,7 +55,7 @@
         <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
           <!-- #tickers list -->
           <div
-            v-for="(item, idx) in tickers"
+            v-for="(item, idx) in tickers.slice(start, end)"
             :key="item.name"
             @click="handleSelect(item)"
             :class="{
@@ -91,6 +91,14 @@
             </button>
           </div>
         </dl>
+        <div class="flex w-100 justify-center">
+          <button 
+          v-if="start != 0"
+          @click="prev()" class="px-4 py-2 bg-gray-300 mr-2 mt-5" type="button">Назад</button>
+          <button 
+          v-if="isLastPage"
+          @click="next()" class="px-4 py-2 bg-gray-300 mr-2 mt-5" type="button">Вперед</button>
+        </div>
         <hr class="w-full border-t border-gray-600 my-4" />
       </template>
 
@@ -141,6 +149,9 @@ export default {
   name: "App",
   data() {
     return {
+      start: 0,
+      end: 6,
+      count: 1,
       isContains: false,
       coinsList: [],
       coinsData: [],
@@ -157,19 +168,15 @@ export default {
         name: this.ticker,
         price: "-",
       };
-
       if (this.tickers.find(t => t.name.toUpperCase() == this.ticker.toUpperCase())) {
         this.isContains = true;
         return;
       }
       this.tickers.push(newTicker);
-
       // push to local storage
       localStorage.setItem("tickerList", JSON.stringify(this.tickers));
-
       // Get ticker info
       this.updatePriceAPI(newTicker);
-
       this.ticker = "";
       this.coinsList = [];
     },
@@ -195,9 +202,9 @@ export default {
 
     remove(idx) {
       this.tickers.splice(idx, 1);
+      localStorage.setItem("tickerList", JSON.stringify(this.tickers));
     },
 
-    // - - -
     updatePriceAPI(newTicker) {
       setInterval(() => {
         fetch(
@@ -213,8 +220,24 @@ export default {
             }
           })
           .catch(error => console.error(error));
-      }, 5000);
+      }, 60000000);
     },
+
+    next() {
+      this.start = this.start + 6;
+      this.end = this.end + 6;
+    },
+    prev() {
+      this.start = this.start - 6;
+      this.end = this.end - 6;
+    },
+  },
+
+  // #computed
+  computed: {
+    isLastPage () {
+     return this.tickers.slice(this.start, this.end).length >= 6 ? true : false
+    }
   },
 
   // #created
@@ -233,6 +256,9 @@ export default {
       });
     }
   },
+
+
+
 };
 </script>
 
