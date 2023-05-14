@@ -5,7 +5,11 @@ module.exports = {
     extend: {},
   },
   plugins: [
+<<<<<<< HEAD
       require('@tailwindcss/forms'),
+=======
+     require('@tailwindcss/forms'),
+>>>>>>> conquer-code
     ],
 }
 
