@@ -1,3 +1,4 @@
+<<<<<<< HEAD:src/assets/tailwind.css
 <<<<<<< HEAD:src/app.css
 /*! normalize.css v8.0.1 | MIT License | github.com/necolas/normalize.css */
 
@@ -93730,3 +93731,8 @@ select {
 
 @tailwind utilities;
 >>>>>>> a8712a2 (Видалений зайвий файл app.css):src/assets/tailwind.css
+=======
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+>>>>>>> 2d5f01b (Додана оптимізація tailwindcss):src/app.css
