@@ -146,7 +146,7 @@ export default {
       coinsData: [],
       selTicker: null,
       ticker: "",
-      tickers: [],
+      tickers: JSON.parse(localStorage.getItem("tickerList")) || [],
       graph: [],
     };
   },
@@ -164,32 +164,17 @@ export default {
       }
       this.tickers.push(newTicker);
 
+      // push to local storage
+      localStorage.setItem("tickerList", JSON.stringify(this.tickers));
+
       // Get ticker info
-      setInterval(() => {
-        fetch(
-          `https://min-api.cryptocompare.com/data/price?fsym=${newTicker.name}&tsyms=USD&api_key=38670903ca116672f3a5f494df8cdefefe2503b4ef3399e63c9e13ba1069bc87`,
-        )
-          .then(response => {
-            if (response.ok) {
-              return response.json();
-            }
-          })
-          .then(data => {
-            const currentPrice = (this.tickers.find(item => item.name == newTicker.name).price =
-              data.USD > 1 ? data.USD.toFixed(3) : data.USD.toPrecision(3));
+      this.updatePriceAPI(newTicker);
 
-            if (this.selTicker?.name == newTicker.name) {
-              this.graph.push(currentPrice);
-            }
-          })
-
-          .catch(error => console.error(error));
-      }, 5000);
       this.ticker = "";
       this.coinsList = [];
     },
 
-    updateleCoinsList() {
+    updateCoinsList() {
       this.isContains = false;
       this.coinsList = this.coinsData
         .filter(coin => coin.toUpperCase().includes(this.ticker.toUpperCase()))
@@ -211,14 +196,42 @@ export default {
     remove(idx) {
       this.tickers.splice(idx, 1);
     },
+
+    // - - -
+    updatePriceAPI(newTicker) {
+      setInterval(() => {
+        fetch(
+          `https://min-api.cryptocompare.com/data/price?fsym=${newTicker.name}&tsyms=USD&api_key=38670903ca116672f3a5f494df8cdefefe2503b4ef3399e63c9e13ba1069bc87`,
+        )
+          .then(response => response.json())
+          .then(data => {
+            const currentPrice = (this.tickers.find(item => item.name == newTicker.name).price =
+              data.USD > 1 ? data.USD.toFixed(3) : data.USD.toPrecision(3));
+
+            if (this.selTicker?.name == newTicker.name) {
+              this.graph.push(currentPrice);
+            }
+          })
+          .catch(error => console.error(error));
+      }, 5000);
+    },
   },
 
+  // #created
   created() {
+    // get coins list
     fetch(`https://min-api.cryptocompare.com/data/all/coinlist?summary=true`)
       .then(response => response.json())
       .then(data => {
         this.coinsData = Object.values(data.Data).map(item => item.Symbol);
       });
+
+    // get tickers list from local storage
+    if (this.tickers.length > 0) {
+      this.tickers.forEach(t => {
+        this.updatePriceAPI(t);
+      });
+    }
   },
 };
 </script>
