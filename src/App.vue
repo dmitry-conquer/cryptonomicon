@@ -149,14 +149,14 @@ export default {
   name: "App",
   data() {
     return {
-      page: 1,
+      page: localStorage.getItem('page-number') || 1,
       isContains: false,
       hasLastPage: null,
       coinsList: [],
       coinsData: [],
       selTicker: null,
       ticker: "",
-      searchTicker: "",
+      searchTicker: localStorage.getItem('current-filter-text') || "",
       tickers: JSON.parse(localStorage.getItem("tickerList")) || [],
       graph: [],
     };
@@ -227,6 +227,8 @@ export default {
     filteredTickers() {
       const start = 6 * this.page - 6;
       const end = 6 * this.page;
+      localStorage.setItem('page-number', this.page);
+
       const filteredTickers = this.tickers.filter(t => t.name.toUpperCase().includes(this.searchTicker.toUpperCase()));
 
       this.hasLastPage = filteredTickers.length > end;
@@ -251,11 +253,11 @@ export default {
     }
   },
 
-
   // #watch
   watch: {
     searchTicker() {
       this.page = 1;
+      localStorage.setItem('current-filter-text', this.searchTicker);
     }
   }
 };
