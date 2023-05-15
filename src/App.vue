@@ -26,7 +26,8 @@
                 {{ coin }}
               </span>
             </div>
-            <div v-if="isContains" class="text-sm text-red-600">Такой тикер уже добавлен</div>
+            <div v-if="isContains" class="text-sm text-red-600">Такий тікер вже додано</div>
+            <div v-if="isEmpty" class="text-sm text-red-600">Вкажіть назву тікера</div>
           </div>
         </div>
 
@@ -158,6 +159,7 @@ export default {
       page: localStorage.getItem('page-number') || 1,
 
       isContains: false,
+      isEmpty: false,
       hasLastPage: false,
     };
   },
@@ -187,6 +189,11 @@ export default {
       };
       if (this.tickers.find(t => t.name.toUpperCase() == this.ticker.toUpperCase())) {  
         this.isContains = true;
+        return;
+      }
+      if (this.ticker === '') {
+        console.log('isEmpty');
+        this.isEmpty = true;
         return;
       }
       this.tickers.push(newTicker);
@@ -258,6 +265,7 @@ export default {
 
     ticker() {
       this.isContains = false;
+      this.isEmpty = false;
     }
   }
 };
