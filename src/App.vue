@@ -17,9 +17,9 @@
                 class="block w-full pr-10 border-gray-300 text-gray-900 focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm rounded-md"
                 placeholder="Например DOGE" />
             </div>
-            <div v-if="coinsList.length > 0" class="flex bg-white shadow-md p-1 rounded-md shadow-md flex-wrap">
+            <div v-if="coinsList.length > 0 && ticker != ''" class="flex bg-white shadow-md p-1 rounded-md shadow-md flex-wrap">
               <span
-                v-for="(coin, idx) in coinsList"
+                v-for="(coin, idx) in updateCoinsList()"
                 :key="idx"
                 @click="(ticker = coin), add()"
                 class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer">
@@ -53,11 +53,11 @@
           <button v-if="hasLastPage" @click="page++" class="px-4 py-2 bg-gray-300 mr-2 mt-5" type="button">
             Вперед
           </button>
-          <input v-model="searchTicker"  type="text" />
+          <input v-model="filter"  type="text" />
         </div>
       </section>
 
-      <template v-if="tickers.length > 0">
+      <template v-if="tickers.length > 0 && filteredTickers().length > 0">
         <hr class="w-full border-t border-gray-600 my-4" />
         <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
           <!-- #tickers list -->
@@ -149,17 +149,34 @@ export default {
   name: "App",
   data() {
     return {
-      page: localStorage.getItem('page-number') || 1,
-      isContains: false,
-      hasLastPage: null,
-      coinsList: [],
-      coinsData: [],
-      selTicker: null,
       ticker: "",
-      searchTicker: localStorage.getItem('current-filter-text') || "",
+      filter: localStorage.getItem('current-filter-text') || "",
+      selTicker: null,
       tickers: JSON.parse(localStorage.getItem("tickerList")) || [],
+      coinsList: [],
       graph: [],
+      page: localStorage.getItem('page-number') || 1,
+
+      isContains: false,
+      hasLastPage: false,
     };
+  },
+
+    // #created
+  created() {
+    // get coins list
+    fetch(`https://min-api.cryptocompare.com/data/all/coinlist?summary=true`)
+      .then(response => response.json())
+      .then(data => {
+        this.coinsList = Object.values(data.Data).map(item => item.Symbol);
+      });
+
+    // get tickers list from local storage
+    if (this.tickers.length > 0) {
+      this.tickers.forEach(t => {
+        this.updatePriceAPI(t);
+      });
+    }
   },
 
   methods: {
@@ -168,7 +185,7 @@ export default {
         name: this.ticker,
         price: "-",
       };
-      if (this.tickers.find(t => t.name.toUpperCase() == this.ticker.toUpperCase())) {
+      if (this.tickers.find(t => t.name.toUpperCase() == this.ticker.toUpperCase())) {  
         this.isContains = true;
         return;
       }
@@ -178,16 +195,11 @@ export default {
       // Get ticker info
       this.updatePriceAPI(newTicker);
       this.ticker = "";
-      this.searchTicker = "";
-      this.coinsList = [];
+      this.filter = "";
     },
 
     updateCoinsList() {
-      this.isContains = false;
-      this.coinsList = this.coinsData
-        .filter(coin => coin.toUpperCase().includes(this.ticker.toUpperCase()))
-        .slice(0, 4);
-      if (this.ticker == "") this.coinsList = [];
+      return this.coinsList.filter(coin => coin.toUpperCase().includes(this.ticker.toUpperCase())).slice(0, 4);
     },
 
     handleSelect(currentTicker) {
@@ -221,7 +233,7 @@ export default {
             }
           })
           .catch(error => console.error(error));
-      }, 60000000);
+      }, 500000);
     },
 
     filteredTickers() {
@@ -229,35 +241,23 @@ export default {
       const end = 6 * this.page;
       localStorage.setItem('page-number', this.page);
 
-      const filteredTickers = this.tickers.filter(t => t.name.toUpperCase().includes(this.searchTicker.toUpperCase()));
-
+      const filteredTickers = this.tickers.filter(t => t.name.toUpperCase().includes(this.filter.toUpperCase()));
       this.hasLastPage = filteredTickers.length > end;
       return filteredTickers.slice(start, end);
     },
   },
 
-  // #created
-  created() {
-    // get coins list
-    fetch(`https://min-api.cryptocompare.com/data/all/coinlist?summary=true`)
-      .then(response => response.json())
-      .then(data => {
-        this.coinsData = Object.values(data.Data).map(item => item.Symbol);
-      });
 
-    // get tickers list from local storage
-    if (this.tickers.length > 0) {
-      this.tickers.forEach(t => {
-        this.updatePriceAPI(t);
-      });
-    }
-  },
 
   // #watch
   watch: {
-    searchTicker() {
+    filter() {
       this.page = 1;
-      localStorage.setItem('current-filter-text', this.searchTicker);
+      localStorage.setItem('current-filter-text', this.filter);
+    },
+
+    ticker() {
+      this.isContains = false;
     }
   }
 };
