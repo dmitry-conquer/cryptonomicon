@@ -48,6 +48,13 @@
           </svg>
           Добавить
         </button>
+        <div class="flex w-100">
+          <button v-if="page > 1" @click="page--" class="px-4 py-2 bg-gray-300 mr-2 mt-5" type="button">Назад</button>
+          <button v-if="hasLastPage" @click="page++" class="px-4 py-2 bg-gray-300 mr-2 mt-5" type="button">
+            Вперед
+          </button>
+          <input v-model="searchTicker"  type="text" />
+        </div>
       </section>
 
       <template v-if="tickers.length > 0">
@@ -55,7 +62,7 @@
         <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
           <!-- #tickers list -->
           <div
-            v-for="(item, idx) in tickers.slice(start, end)"
+            v-for="(item, idx) in filteredTickers()"
             :key="item.name"
             @click="handleSelect(item)"
             :class="{
@@ -91,14 +98,7 @@
             </button>
           </div>
         </dl>
-        <div class="flex w-100 justify-center">
-          <button 
-          v-if="start != 0"
-          @click="prev()" class="px-4 py-2 bg-gray-300 mr-2 mt-5" type="button">Назад</button>
-          <button 
-          v-if="isLastPage"
-          @click="next()" class="px-4 py-2 bg-gray-300 mr-2 mt-5" type="button">Вперед</button>
-        </div>
+
         <hr class="w-full border-t border-gray-600 my-4" />
       </template>
 
@@ -149,14 +149,14 @@ export default {
   name: "App",
   data() {
     return {
-      start: 0,
-      end: 6,
-      count: 1,
+      page: 1,
       isContains: false,
+      hasLastPage: null,
       coinsList: [],
       coinsData: [],
       selTicker: null,
       ticker: "",
+      searchTicker: "",
       tickers: JSON.parse(localStorage.getItem("tickerList")) || [],
       graph: [],
     };
@@ -178,6 +178,7 @@ export default {
       // Get ticker info
       this.updatePriceAPI(newTicker);
       this.ticker = "";
+      this.searchTicker = "";
       this.coinsList = [];
     },
 
@@ -223,21 +224,14 @@ export default {
       }, 60000000);
     },
 
-    next() {
-      this.start = this.start + 6;
-      this.end = this.end + 6;
-    },
-    prev() {
-      this.start = this.start - 6;
-      this.end = this.end - 6;
-    },
-  },
+    filteredTickers() {
+      const start = 6 * this.page - 6;
+      const end = 6 * this.page;
+      const filteredTickers = this.tickers.filter(t => t.name.toUpperCase().includes(this.searchTicker.toUpperCase()));
 
-  // #computed
-  computed: {
-    isLastPage () {
-     return this.tickers.slice(this.start, this.end).length >= 6 ? true : false
-    }
+      this.hasLastPage = filteredTickers.length > end;
+      return filteredTickers.slice(start, end);
+    },
   },
 
   // #created
@@ -258,7 +252,12 @@ export default {
   },
 
 
-
+  // #watch
+  watch: {
+    searchTicker() {
+      this.page = 1;
+    }
+  }
 };
 </script>
 
