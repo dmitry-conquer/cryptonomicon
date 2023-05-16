@@ -10,16 +10,17 @@
               <input
                 v-model="ticker"
                 @keydown.enter="add()"
-                @input="updateCoinsList"
                 type="text"
                 name="wallet"
                 id="wallet"
                 class="block w-full pr-10 border-gray-300 text-gray-900 focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm rounded-md"
                 placeholder="Например DOGE" />
             </div>
-            <div v-if="coinsList.length > 0 && ticker != ''" class="flex bg-white shadow-md p-1 rounded-md shadow-md flex-wrap">
+            <div
+              v-if="coinsList.length > 0 && ticker != ''"
+              class="flex bg-white shadow-md p-1 rounded-md shadow-md flex-wrap">
               <span
-                v-for="(coin, idx) in updateCoinsList()"
+                v-for="(coin, idx) in updatedCoinsList"
                 :key="idx"
                 @click="(ticker = coin), add()"
                 class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer">
@@ -54,20 +55,20 @@
           <button v-if="hasLastPage" @click="page++" class="px-4 py-2 bg-gray-300 mr-2 mt-5" type="button">
             Вперед
           </button>
-          <input v-model="filter"  type="text" />
+          <input v-model="filter" type="text" />
         </div>
       </section>
 
-      <template v-if="tickers.length > 0 && filteredTickers().length > 0">
+      <template v-if="tickers.length > 0 && filteredTickersCut.length > 0">
         <hr class="w-full border-t border-gray-600 my-4" />
         <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
           <!-- #tickers list -->
           <div
-            v-for="(item, idx) in filteredTickers()"
+            v-for="(item, idx) in filteredTickersCut"
             :key="item.name"
             @click="handleSelect(item)"
             :class="{
-              'border-4': selTicker == item,
+              'border-4': selecterTicked == item,
             }"
             class="bg-white overflow-hidden shadow rounded-lg border-purple-800 border-solid cursor-pointer">
             <div class="px-4 py-5 sm:p-6 text-center">
@@ -103,21 +104,21 @@
         <hr class="w-full border-t border-gray-600 my-4" />
       </template>
 
-      <section v-if="selTicker" class="relative">
+      <section v-if="selecterTicked" class="relative">
         <h3 class="text-lg leading-6 font-medium text-gray-900 my-8">
-          {{ selTicker.name }}
+          {{ selecterTicked.name }}
           - USD
         </h3>
         <div class="flex items-end border-gray-600 border-b border-l h-64">
           <div
-            v-for="(bar, idx) in graphNormilize()"
+            v-for="(bar, idx) in graphNormilized"
             :key="idx"
             :style="{
               height: `${bar}%`,
             }"
             class="bg-purple-800 border w-10"></div>
         </div>
-        <button @click="selTicker = null" type="button" class="absolute top-0 right-0">
+        <button @click="selecterTicked = null" type="button" class="absolute top-0 right-0">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -151,33 +152,83 @@ export default {
   data() {
     return {
       ticker: "",
-      filter: localStorage.getItem('current-filter-text') || "",
-      selTicker: null,
+      filter: "",
+      selecterTicked: null,
       tickers: JSON.parse(localStorage.getItem("tickerList")) || [],
       coinsList: [],
       graph: [],
-      page: localStorage.getItem('page-number') || 1,
-
-      isContains: false,
-      isEmpty: false,
-      hasLastPage: false,
+      page: 1,
     };
   },
 
-    // #created
+  // #created
   created() {
-    // get coins list
+    // get history stages
+    const windowData = Object.fromEntries(new URL(window.location).searchParams.entries());
+    const ENTRIES_KEYS = ['page', 'filter'];
+    ENTRIES_KEYS.forEach(key => {
+      if (windowData[key]) {
+        this[key] = windowData[key]
+      }
+    })
+
+    // get full coins list
     fetch(`https://min-api.cryptocompare.com/data/all/coinlist?summary=true`)
       .then(response => response.json())
       .then(data => {
         this.coinsList = Object.values(data.Data).map(item => item.Symbol);
-      });
+      })
+      .catch(error => console.log(error));
 
     // get tickers list from local storage
-    if (this.tickers.length > 0) {
       this.tickers.forEach(t => {
         this.updatePriceAPI(t);
       });
+  },
+
+  computed: {
+    start() {
+      return 6 * this.page - 6;
+    },
+
+    end() {
+      return 6 * this.page;
+    },
+
+    graphNormilized() {
+      const minPrice = Math.min(...this.graph);
+      const maxPrice = Math.max(...this.graph);
+      if (minPrice === maxPrice) {
+        return this.graph.map(() => 50);
+      }
+      return this.graph.map(price => ((price - minPrice) / (maxPrice - minPrice)) * 95 + 5);
+    },
+
+    updatedCoinsList() {
+      return this.coinsList.filter(coin => coin.toUpperCase().includes(this.ticker.toUpperCase())).slice(0, 4);
+    },
+
+    filteredTickersCut() {
+      return this.tickers.filter(t => t.name.toUpperCase().includes(this.filter.toUpperCase())).slice(this.start, this.end);
+    },
+
+    hasLastPage() {
+      return this.tickers.filter(t => t.name.toUpperCase().includes(this.filter.toUpperCase())).length > this.end;
+    },
+
+    isContains() {
+      return this.tickers.find(t => t.name.toUpperCase() == this.ticker.toUpperCase()); 
+    },
+
+    isEmpty () {
+      return this.ticker == '';
+    },
+
+    pageStateOptions () {
+      return {
+        filter: this.filter,
+        page: this.page
+      }
     }
   },
 
@@ -187,41 +238,25 @@ export default {
         name: this.ticker,
         price: "-",
       };
-      if (this.tickers.find(t => t.name.toUpperCase() == this.ticker.toUpperCase())) {  
-        this.isContains = true;
+      if (this.isContains) {
         return;
       }
-      if (this.ticker === '') {
-        console.log('isEmpty');
-        this.isEmpty = true;
+      if (this.isEmpty) {
         return;
       }
-      this.tickers.push(newTicker);
-      // push to local storage
-      localStorage.setItem("tickerList", JSON.stringify(this.tickers));
-      // Get ticker info
+      this.tickers = [...this.tickers, newTicker]
       this.updatePriceAPI(newTicker);
       this.ticker = "";
       this.filter = "";
     },
 
-    updateCoinsList() {
-      return this.coinsList.filter(coin => coin.toUpperCase().includes(this.ticker.toUpperCase())).slice(0, 4);
-    },
-
     handleSelect(currentTicker) {
-      this.graph = [];
-      this.selTicker = currentTicker;
-    },
-
-    graphNormilize() {
-      const minPrice = Math.min(...this.graph);
-      const maxPrice = Math.max(...this.graph);
-      return this.graph.map(price => ((price - minPrice) / (maxPrice - minPrice)) * 95 + 5);
+      this.selecterTicked = currentTicker;
     },
 
     remove(idx) {
       this.tickers.splice(idx, 1);
+      this.selecterTicked = null
       localStorage.setItem("tickerList", JSON.stringify(this.tickers));
     },
 
@@ -235,39 +270,44 @@ export default {
             const currentPrice = (this.tickers.find(item => item.name == newTicker.name).price =
               data.USD > 1 ? data.USD.toFixed(3) : data.USD.toPrecision(3));
 
-            if (this.selTicker?.name == newTicker.name) {
+            if (this.selecterTicked?.name == newTicker.name) {
               this.graph.push(currentPrice);
             }
           })
           .catch(error => console.error(error));
       }, 500000);
     },
-
-    filteredTickers() {
-      const start = 6 * this.page - 6;
-      const end = 6 * this.page;
-      localStorage.setItem('page-number', this.page);
-
-      const filteredTickers = this.tickers.filter(t => t.name.toUpperCase().includes(this.filter.toUpperCase()));
-      this.hasLastPage = filteredTickers.length > end;
-      return filteredTickers.slice(start, end);
-    },
   },
-
-
 
   // #watch
   watch: {
+    tickers() {
+      localStorage.setItem("tickerList", JSON.stringify(this.tickers));
+    },
+
+    selecterTicked() {
+      this.graph = [];
+    },
+
     filter() {
       this.page = 1;
-      localStorage.setItem('current-filter-text', this.filter);
+    },
+
+    pageStateOptions(value) {
+      window.history.pushState(null, document.title, `?filter=${value.filter}&page=${value.page}`);
     },
 
     ticker() {
       this.isContains = false;
       this.isEmpty = false;
+    },
+
+    filteredTickersCut() {
+      if (this.filteredTickersCut.length == 0 && this.page != 1) {
+        this.page--;
+      }
     }
-  }
+  },
 };
 </script>
 
