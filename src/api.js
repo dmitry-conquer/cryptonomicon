@@ -9,7 +9,6 @@ export const loadTickers = async tickers => {
 
 	// fetch request
 	const res = await fetch(url);
-	console.log(res);
 	const rawData = await res.json();
 	return Object.fromEntries(Object.entries(rawData).map(([key, value]) => [key, value.USD])); 
 };

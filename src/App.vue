@@ -69,6 +69,7 @@
             @click="handleSelect(item)"
             :class="{
               'border-4': selecterTicked == item,
+              'bg-red-100': item.notExist == true,
             }"
             class="bg-white overflow-hidden shadow rounded-lg border-purple-800 border-solid cursor-pointer">
             <div class="px-4 py-5 sm:p-6 text-center">
@@ -147,8 +148,7 @@
 <!-- - - - - - - - [###script] - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
 <script>
-
-import { loadTickers } from './api';
+import { loadTickers } from "./api";
 
 export default {
   name: "App",
@@ -219,7 +219,7 @@ export default {
     },
 
     isContains() {
-      return this.tickers.find(t => t.name.toUpperCase() == this.ticker.toUpperCase());
+      return this.tickers.find(t => t.name.toUpperCase() === this.ticker.toUpperCase());
     },
 
     isEmpty() {
@@ -232,8 +232,6 @@ export default {
         page: this.page,
       };
     },
-
-
   },
 
   methods: {
@@ -263,22 +261,20 @@ export default {
       localStorage.setItem("tickerList", JSON.stringify(this.tickers));
     },
 
-    normalizedPrice(price) { 
-    return price < 1 ?
-           price.toPrecision(3) :
-           price.toFixed(3);
+    normalizedPrice(price) {
+      if (price) return price < 1 ? price.toPrecision(3) : price.toFixed(3);
     },
 
     async updatePriceAPI() {
       if (this.tickers.length == 0) {
-        return
+        return;
       }
       const exchangeData = await loadTickers(this.tickers.map(t => t.name));
-      console.log(exchangeData);
       this.tickers.forEach(t => {
         const price = exchangeData[t.name.toUpperCase()];
-        t.price = this.normalizedPrice(price) ?? '-';
-      })
+        t.notExist = !(price ?? false);
+        t.price = this.normalizedPrice(price) ?? "-";
+      });
     },
   },
 
