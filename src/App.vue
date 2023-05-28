@@ -8,6 +8,7 @@
             <div class="mt-1 relative rounded-md shadow-md">
               <!-- #input ticker -->
               <input
+                ref="ticker"
                 v-model="ticker"
                 @keydown.enter="add()"
                 type="text"
@@ -68,11 +69,14 @@
             :key="item.name"
             @click="handleSelect(item)"
             :class="{
-              'border-4': selecterTicked == item,
-              'bg-red-100': item.notExist == true,
+              'border-4': selectedTicker == item,
             }"
             class="bg-white overflow-hidden shadow rounded-lg border-purple-800 border-solid cursor-pointer">
-            <div class="px-4 py-5 sm:p-6 text-center">
+            <div
+              :class="{
+                'bg-red-100': item.notExist,
+              }"
+              class="px-4 py-5 sm:p-6 text-center">
               <dt class="text-sm font-medium text-gray-500 truncate">
                 {{ item.name }}
                 - USD
@@ -85,7 +89,7 @@
 
             <!-- #remove ticker -->
             <button
-              @click.stop="remove(idx)"
+              @click.stop="remove(idx, item)"
               class="flex items-center justify-center font-medium w-full bg-gray-100 px-4 py-4 sm:px-6 text-md text-gray-500 hover:text-gray-600 hover:bg-gray-200 hover:opacity-20 transition-all focus:outline-none">
               <svg
                 class="h-5 w-5"
@@ -105,12 +109,12 @@
         <hr class="w-full border-t border-gray-600 my-4" />
       </template>
 
-      <section v-if="selecterTicked" class="relative">
+      <section v-if="selectedTicker" class="relative">
         <h3 class="text-lg leading-6 font-medium text-gray-900 my-8">
-          {{ selecterTicked.name }}
+          {{ selectedTicker.name }}
           - USD
         </h3>
-        <div class="flex items-end border-gray-600 border-b border-l h-64">
+        <div class="flex items-end border-gray-600 border-b border-l h-64" ref="graph">
           <div
             v-for="(bar, idx) in graphNormilized"
             :key="idx"
@@ -119,7 +123,7 @@
             }"
             class="bg-purple-800 border w-10"></div>
         </div>
-        <button @click="selecterTicked = null" type="button" class="absolute top-0 right-0">
+        <button @click="selectedTicker = null" type="button" class="absolute top-0 right-0">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -148,7 +152,7 @@
 <!-- - - - - - - - [###script] - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
 <script>
-import { loadTickers } from "./api";
+import { getExchangeData } from "./api";
 
 export default {
   name: "App",
@@ -156,17 +160,17 @@ export default {
     return {
       ticker: "",
       filter: "",
-      selecterTicked: null,
+      selectedTicker: null,
       tickers: JSON.parse(localStorage.getItem("tickerList")) || [],
       coinsList: [],
       graph: [],
       page: 1,
+      subsribedData: null,
+      maxBarsCount: 1,
     };
   },
 
-  // #created
   created() {
-    // get history stages
     const windowData = Object.fromEntries(new URL(window.location).searchParams.entries());
     const ENTRIES_KEYS = ["page", "filter"];
     ENTRIES_KEYS.forEach(key => {
@@ -183,7 +187,13 @@ export default {
       })
       .catch(error => console.log(error));
 
-    setInterval(this.updatePriceAPI, 5000);
+    // - -- - - - -
+    setInterval(this.updateTickersPrice, 3000);
+  },
+
+  mounted() {
+    this.$refs.ticker.focus();
+    window.addEventListener("resize", this.graphWidth);
   },
 
   computed: {
@@ -233,11 +243,18 @@ export default {
       };
     },
   },
-
   methods: {
+    graphWidth() {
+      if (!this.selectedTicker) return;
+      this.maxBarsCount = this.$refs.graph.clientWidth / 38;
+      if (this.graph.length > this.maxBarsCount) {
+        this.graph.splice(0, this.graph.length - Math.floor(this.maxBarsCount));
+      }
+    },
+
     add() {
       const newTicker = {
-        name: this.ticker,
+        name: this.ticker.toUpperCase(),
         price: "-",
       };
       if (this.isContains) {
@@ -252,39 +269,46 @@ export default {
     },
 
     handleSelect(currentTicker) {
-      this.selecterTicked = currentTicker;
+      this.selectedTicker = currentTicker;
     },
 
     remove(idx) {
       this.tickers.splice(idx, 1);
-      this.selecterTicked = null;
+      this.selectedTicker = null;
       localStorage.setItem("tickerList", JSON.stringify(this.tickers));
     },
 
     normalizedPrice(price) {
-      if (price) return price < 1 ? price.toPrecision(3) : price.toFixed(3);
+      if (price) return price < 1 ? price.toPrecision(3) : price.toFixed(2);
     },
 
-    async updatePriceAPI() {
+    async updateTickersPrice() {
       if (this.tickers.length == 0) {
         return;
       }
-      const exchangeData = await loadTickers(this.tickers.map(t => t.name));
-      this.tickers.forEach(t => {
-        const price = exchangeData[t.name.toUpperCase()];
-        t.notExist = !(price ?? false);
-        t.price = this.normalizedPrice(price) ?? "-";
+      const exchangeData = await getExchangeData(this.tickers.map(t => t.name.toUpperCase()));
+      this.tickers.forEach(ticker => {
+        const price = exchangeData[ticker.name.toUpperCase()];
+        if (!price) {
+          ticker.notExist = true;
+        }
+        ticker.price = this.normalizedPrice(price) ?? "-";
+
+        if (this.selectedTicker?.name === ticker.name) {
+          this.graph.push(ticker.price);
+          if (this.graph.length > this.maxBarsCount) {
+            this.graph.splice(0, this.graph.length - Math.floor(this.maxBarsCount));
+          }
+        }
       });
     },
   },
-
-  // #watch
   watch: {
     tickers() {
       localStorage.setItem("tickerList", JSON.stringify(this.tickers));
     },
 
-    selecterTicked() {
+    selectedTicker() {
       this.graph = [];
     },
 
